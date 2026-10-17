@@ -1,10 +1,10 @@
 ﻿# HydroMesh GIS â€” Phase 1 command-center prototype
 
-HydroMesh GIS is a React, TypeScript, and Vite prototype with CesiumJS and optional Mapbox GL JS map views centered on Naga City, Camarines Sur. It uses a light water-network command dashboard and simulated infrastructure data.
+HydroMesh GIS is a React, TypeScript, and Vite prototype with CesiumJS and optional Mapbox GL JS map views centered on Naga City, Camarines Sur. It includes connected utility-operator and system-administrator workspaces, a light water-network dashboard, and simulated infrastructure data.
 
 ## Run locally
 
-Requirements: Node.js 20.19+ and npm.
+Requirements: Node.js 22.12+ (or Node.js 24+) and npm.
 
 ```sh
 npm install
@@ -35,8 +35,34 @@ No database, API key, Cesium ion account, device, backend service, or authentica
 
 ## Demo data and limitations
 
-All asset names, coordinates, conditions, routes, waterway geometry, buildings, contours, and sample measurements are fictional demonstration data. They are not verified Naga City utility assets or actual water-quality readings. Sensor icons and data are simulated only; there is no IoT connectivity, telemetry service, device control, anomaly engine, backend, authentication, or persistence in this phase. The displayed pilot geography and topography are illustrative, not official GIS boundaries or terrain elevations.
+All asset names, coordinates, conditions, routes, waterway geometry, buildings, contours, and sample measurements are fictional demonstration data. They are not verified Naga City utility assets or actual water-quality readings. Sensor icons and data are simulated only; there is no IoT connectivity, telemetry service, device control, anomaly engine, backend or server authentication. Demo edits persist in local browser storage. The displayed pilot geography and topography are illustrative, not official GIS boundaries or terrain elevations.
 
 Cesium imagery is © OpenStreetMap contributors under the ODbL, with attribution displayed on the map. Cesium runs on its ellipsoid terrain provider; the apparent relief comes from the clearly stylized overlay rather than a real terrain dataset. Mapbox uses Mapbox Standard styles, Mapbox Terrain DEM, and Mapbox-hosted data and needs an access token. Mapbox building coverage for Naga City still needs confirmation with a configured token; native mode only displays Mapbox-supplied geometry, while illustrative mode is synthetic.
 
 The future backend destination is `C:\Users\danie\OneDrive\Desktop\HydroMesh Backend`; no backend files are created by this phase.
+
+
+## Connected administrator and utility workspaces
+
+The app opens the **System Administrator** workspace by default. Use the profile selector in the top right to switch roles, or open both URLs in separate tabs of the same browser:
+
+- Administrator: `http://localhost:5173/#admin`
+- Utility operator: `http://localhost:5173/#operator`
+
+Use the same hostname and port in both tabs. `localhost` and `127.0.0.1` have separate browser storage.
+
+Operator incident creation/updates, work-order assignments and status changes, actuator commands, and report exports create admin notifications and audit records. Notifications now flow in both directions: administrator changes also appear in the utility operator notification bell and trigger a live update message when that workspace is open. Each role has its own persisted unread state; marking messages read in one workspace does not clear the other role's inbox. Notifications can be marked read without deleting the audit history. Administrator changes to incidents, work orders, user permissions, node configuration, and saved rules are shared back to the operator workspace. Edits survive page refreshes using versioned `hydromesh.v2.*` localStorage entries; no backend is required.
+
+Administrator screens include:
+
+- Dashboard, existing Cesium/Mapbox GIS, searchable asset registry, shared incidents, and maintenance orders.
+- User creation/editing, suspension/reactivation, pending-user approval, search, pagination, and role module permissions. Juan Dela Cruz is the connected demo operator account. The current administrator is protected against suspension and role removal.
+- IoT node registration linked to the project's existing assets, configuration, activation/deactivation, maintenance status, and demo calibration.
+- Threshold rules with validated limits/ranges, severity, enabled status, notification preferences, and a manual sample-reading simulator. A triggered saved rule creates a shared incident and, when enabled, a maintenance work order.
+- Zone-filtered report generation, saved snapshots and CSV download, and searchable/filterable/exportable audit logs.
+
+Email/SMS settings, server health metrics, sensor readings, and actuator commands are illustrative. No external messages are sent, no physical devices are controlled, and the role selector is not real authentication. Synchronization is limited to the same browser profile and origin, not other computers or users. Simultaneous writes from multiple tabs are a demo convenience, not a transactional database or tamper-proof audit service.
+
+### Verification
+
+`npm test` runs the existing geography suite and the connected-workspace interaction tests. The interaction tests mock the WebGL map while verifying shared asset IDs, role workflows, notifications, persistence, permission restrictions, node registration, threshold simulation, and report exports. `npm run build` checks TypeScript and generates the Vite production bundle.

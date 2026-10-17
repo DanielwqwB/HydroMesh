@@ -1,5 +1,6 @@
 import {
   BoxGraphics,
+  BoundingSphere,
   CallbackPositionProperty,
   Cartesian2,
   Cartesian3,
@@ -14,6 +15,7 @@ import {
   Entity,
   EntityCollection,
   HeadingPitchRoll,
+  HeadingPitchRange,
   HorizontalOrigin,
   LabelGraphics,
   LabelStyle,
@@ -535,14 +537,12 @@ function buildAssetModel(entities: EntityCollection, asset: DemoAsset) {
   return visuals;
 }
 
-function focusCamera(viewer: Viewer, longitude: number, latitude: number, height: number, duration = 1.15) {
-  viewer.camera.flyTo({
-    destination: Cartesian3.fromDegrees(longitude, latitude, height),
-    orientation: {
-      heading: (34 * Math.PI) / 180,
-      pitch: (-49 * Math.PI) / 180,
-      roll: 0,
-    },
+function focusCamera(viewer: Viewer, longitude: number, latitude: number, range: number, duration = 1.15) {
+  // Orbit an actual ground target. A tilted camera placed directly above the
+  // asset looks past it, especially in the wide, shallow settings map.
+  viewer.camera.cancelFlight();
+  viewer.camera.flyToBoundingSphere(new BoundingSphere(Cartesian3.fromDegrees(longitude, latitude, 25), 1), {
+    offset: new HeadingPitchRange((34 * Math.PI) / 180, (-49 * Math.PI) / 180, range),
     duration,
   });
 }
@@ -652,14 +652,7 @@ export const HydromeshMap = forwardRef<HydromeshMapHandle, HydromeshMapProps>(
         });
       });
 
-      viewer.camera.setView({
-        destination: Cartesian3.fromDegrees(CITY_CENTER.longitude, CITY_CENTER.latitude, 10500),
-        orientation: {
-          heading: (34 * Math.PI) / 180,
-          pitch: (-49 * Math.PI) / 180,
-          roll: 0,
-        },
-      });
+      focusCamera(viewer, CITY_CENTER.longitude, CITY_CENTER.latitude, 10500, 0);
       viewer.scene.requestRender();
 
       const handler = new ScreenSpaceEventHandler(viewer.scene.canvas);
@@ -674,10 +667,13 @@ export const HydromeshMap = forwardRef<HydromeshMapHandle, HydromeshMapProps>(
       const animationTimer = window.setInterval(() => viewer.scene.requestRender(), 55);
       const onResize = () => viewer.resize();
       window.addEventListener("resize", onResize);
+      const resizeObserver = new ResizeObserver(onResize);
+      resizeObserver.observe(host);
 
       return () => {
         window.clearInterval(animationTimer);
         window.removeEventListener("resize", onResize);
+        resizeObserver.disconnect();
         handler.destroy();
         if (!viewer.isDestroyed()) viewer.destroy();
         viewerRef.current = null;
@@ -693,7 +689,7 @@ export const HydromeshMap = forwardRef<HydromeshMapHandle, HydromeshMapProps>(
       }
       if (selectedAssetId) {
         const asset = demoAssets.find((item) => item.id === selectedAssetId);
-        if (asset) focusCamera(viewer, asset.longitude, asset.latitude, asset.type === "pipeline" ? 2100 : 1900);
+        if (asset) focusCamera(viewer, asset.longitude, asset.latitude, asset.type === "pipeline" ? 2100 : 850);
       }
       viewer.scene.requestRender();
     }, [selectedAssetId]);
@@ -702,7 +698,7 @@ export const HydromeshMap = forwardRef<HydromeshMapHandle, HydromeshMapProps>(
       focusAsset(assetId) {
         const asset = demoAssets.find((item) => item.id === assetId);
         if (asset && viewerRef.current) {
-          focusCamera(viewerRef.current, asset.longitude, asset.latitude, asset.type === "pipeline" ? 2300 : 1950);
+          focusCamera(viewerRef.current, asset.longitude, asset.latitude, asset.type === "pipeline" ? 2300 : 850);
         }
       },
       overview() {
