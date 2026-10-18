@@ -3,12 +3,19 @@ import mapboxgl, { type Map as MapboxMap, type GeoJSONSource, type MapMouseEvent
 import "mapbox-gl/dist/mapbox-gl.css";
 import { demoAssets } from "../data/assets";
 import { NAGA_BARANGAYS } from "../data/nagaBarangays";
-import type { HydromeshMapHandle } from "./HydromeshMap";
 import { createMapboxInfrastructureLayer } from "./MapboxInfrastructureLayer";
 import type { BarangayBoundary, MonitoringNode } from "../types/barangay";
 
 export type MapboxStyle = "satellite" | "light" | "dark";
 export type BuildingMode = "mapbox" | "illustrative";
+export interface MapHandle {
+  focusAsset(id: string): void;
+  overview(): void;
+  zoomIn(): void;
+  zoomOut(): void;
+  rotate(direction: "left" | "right"): void;
+  tilt(direction: "up" | "down"): void;
+}
 const STYLES: Record<MapboxStyle, string> = {
   satellite: "mapbox://styles/mapbox/standard-satellite",
   light: "mapbox://styles/mapbox/standard",
@@ -78,7 +85,7 @@ interface Props {
   terrainVisible: boolean;
 }
 
-export const MapboxDigitalTwin = forwardRef<HydromeshMapHandle, Props>(function MapboxDigitalTwin({ selectedAssetId, onSelectAsset, onSelectBarangay, onSelectMonitoringNode, styleMode, buildingMode, selectedBarangayCode, selectedMonitoringNodeId, barangayBoundaries, monitoringNodes, layerVisibility, terrainVisible }, ref) {
+export const MapboxDigitalTwin = forwardRef<MapHandle, Props>(function MapboxDigitalTwin({ selectedAssetId, onSelectAsset, onSelectBarangay, onSelectMonitoringNode, styleMode, buildingMode, selectedBarangayCode, selectedMonitoringNodeId, barangayBoundaries, monitoringNodes, layerVisibility, terrainVisible }, ref) {
   const hostRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapboxMap | null>(null);
   const onSelectRef = useRef(onSelectAsset);
@@ -270,10 +277,13 @@ export const MapboxDigitalTwin = forwardRef<HydromeshMapHandle, Props>(function 
       }
     }, 65);
     const resize = () => map.resize();
+    const resizeFrame = window.requestAnimationFrame(resize);
+    map.once("load", resize);
     window.addEventListener("resize", resize);
     const resizeObserver = new ResizeObserver(resize);
     if (hostRef.current) resizeObserver.observe(hostRef.current);
-    return () => { window.clearInterval(flowTimer); window.removeEventListener("resize", resize); resizeObserver.disconnect(); hoverPopup?.remove(); map.remove(); mapRef.current = null; infrastructureRef.current = null; };
+    if (hostRef.current?.parentElement) resizeObserver.observe(hostRef.current.parentElement);
+    return () => { window.cancelAnimationFrame(resizeFrame); window.clearInterval(flowTimer); window.removeEventListener("resize", resize); resizeObserver.disconnect(); hoverPopup?.remove(); map.remove(); mapRef.current = null; infrastructureRef.current = null; };
   }, [token]);
 
   useEffect(() => {
@@ -380,7 +390,7 @@ export const MapboxDigitalTwin = forwardRef<HydromeshMapHandle, Props>(function 
   if (!token) return <div className="mapbox-setup" role="status">
     <div className="mapbox-setup-icon">3D</div>
     <strong>Mapbox needs an access token</strong>
-    <p>Add your public token as <code>VITE_MAPBOX_ACCESS_TOKEN</code> in <code>.env.local</code>, then restart the dev server. Your Cesium map is still available from the map switch.</p>
+    <p>Add your public token as <code>VITE_MAPBOX_ACCESS_TOKEN</code> in <code>.env.local</code>, then restart the dev server.</p>
   </div>;
   return <div aria-label="Mapbox 3D map of Naga City" className="mapbox-host" ref={hostRef} />;
 });

@@ -12,8 +12,7 @@ import {
   RotateCw,
   X,
 } from "lucide-react";
-import { HydromeshMap, type HydromeshMapHandle } from "./HydromeshMap";
-import type { MapboxStyle } from "./MapboxDigitalTwin";
+import type { MapHandle, MapboxStyle } from "./MapboxDigitalTwin";
 import { seedNodes } from "../data/adminSeeds";
 import { useSharedState } from "../services/workspaceStore";
 import { demoAssets, assetTypeLabels } from "../data/assets";
@@ -42,8 +41,7 @@ export function OperatorMap({
   const registeredNode = registeredNodes.find(
     (node) => node.asset === selectedAssetId,
   );
-  const mapRef = useRef<HydromeshMapHandle>(null);
-  const [provider, setProvider] = useState("cesium");
+  const mapRef = useRef<MapHandle>(null);
   const [style, setStyle] = useState<MapboxStyle>("light");
   const [expanded, setExpanded] = useState(false);
   const [dismissedAsset, setDismissedAsset] = useState<string | null>(null);
@@ -73,7 +71,7 @@ export function OperatorMap({
         }
       })
       .catch(() => {
-        /* Cesium and asset layers remain usable without optional boundaries. */
+        /* The map remains usable without optional boundary data. */
       });
     return () => {
       mounted = false;
@@ -96,54 +94,29 @@ export function OperatorMap({
             <small>Interactive 3D · Illustrative infrastructure</small>
           </span>
         </div>
-        <select
-          aria-label="Map provider"
-          value={provider}
-          onChange={(e) => setProvider(e.target.value)}
-        >
-          <option value="cesium">Cesium 3D</option>
-          <option value="mapbox">Mapbox 3D</option>
+        <select aria-label="Map style" value={style} onChange={(e) => setStyle(e.target.value as MapboxStyle)}>
+          <option value="light">Standard</option>
+          <option value="satellite">Satellite</option>
+          <option value="dark">Night</option>
         </select>
-        {provider === "mapbox" && (
-          <select
-            aria-label="Map style"
-            value={style}
-            onChange={(e) => setStyle(e.target.value as MapboxStyle)}
-          >
-            <option value="light">Standard</option>
-            <option value="satellite">Satellite</option>
-            <option value="dark">Night</option>
-          </select>
-        )}
       </div>
-      {provider === "cesium" ? (
-        <HydromeshMap
+      <Suspense fallback={<div className="op-map-loading">Loading 3D map…</div>}>
+        <MapboxDigitalTwin
           ref={mapRef}
           selectedAssetId={selectedAssetId}
           onSelectAsset={selectAsset}
+          onSelectBarangay={setBarangay}
+          onSelectMonitoringNode={setNode}
+          styleMode={style}
+          buildingMode="mapbox"
+          selectedBarangayCode={barangay}
+          selectedMonitoringNodeId={node}
+          barangayBoundaries={boundaries}
+          monitoringNodes={nodes}
           layerVisibility={layers}
+          terrainVisible
         />
-      ) : (
-        <Suspense
-          fallback={<div className="op-map-loading">Loading 3D map…</div>}
-        >
-          <MapboxDigitalTwin
-            ref={mapRef}
-            selectedAssetId={selectedAssetId}
-            onSelectAsset={selectAsset}
-            onSelectBarangay={setBarangay}
-            onSelectMonitoringNode={setNode}
-            styleMode={style}
-            buildingMode="mapbox"
-            selectedBarangayCode={barangay}
-            selectedMonitoringNodeId={node}
-            barangayBoundaries={boundaries}
-            monitoringNodes={nodes}
-            layerVisibility={layers}
-            terrainVisible
-          />
-        </Suspense>
-      )}
+      </Suspense>
       <div className="op-map-left">
         <button
           aria-label="Toggle map layers"
@@ -188,10 +161,6 @@ export function OperatorMap({
               <input
                 type="checkbox"
                 checked={layers[key]}
-                disabled={
-                  provider === "cesium" &&
-                  (key === "boundaries" || key === "nodes")
-                }
                 onChange={(e) =>
                   setLayers((current) => ({
                     ...current,
@@ -200,10 +169,6 @@ export function OperatorMap({
                 }
               />
               {key[0].toUpperCase() + key.slice(1)}
-              {provider === "cesium" &&
-              (key === "boundaries" || key === "nodes")
-                ? " (Mapbox)"
-                : ""}
             </label>
           ))}
         </div>

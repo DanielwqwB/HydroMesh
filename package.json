@@ -12,7 +12,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "cesium": "^1.134.0",
     "lucide-react": "^0.468.0",
     "mapbox-gl": "^3.32.0",
     "react": "^19.1.0",
@@ -31,7 +30,6 @@
     "tailwindcss": "^3.4.17",
     "typescript": "~5.8.3",
     "vite": "^6.4.1",
-    "vite-plugin-cesium": "^1.2.23",
     "vitest": "^5.0.5"
   }
 }

@@ -2,8 +2,8 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import { OperatorMap } from "../src/components/OperatorMap";
 
-vi.mock("../src/components/HydromeshMap", () => ({
-  HydromeshMap: ({ onSelectAsset }: { onSelectAsset: (id: string) => void }) => <button onClick={() => onSelectAsset("demo-reservoir-a")}>Select reservoir on map</button>,
+vi.mock("../src/components/MapboxDigitalTwin", () => ({
+  MapboxDigitalTwin: ({ onSelectAsset }: { onSelectAsset: (id: string) => void }) => <button onClick={() => onSelectAsset("demo-reservoir-a")}>Select reservoir on map</button>,
 }));
 vi.mock("../src/services/barangayData", () => ({
   loadBarangayBoundaries: async () => ({ boundaries: [] }),

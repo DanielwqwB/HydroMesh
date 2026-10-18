@@ -99,7 +99,7 @@ export function AdminAudit() {
               {[
                 ["Web Application", Globe, "Browser runtime"],
                 ["Data Store", Database, "Local browser storage"],
-                ["GIS Engine", Globe, "Cesium / Mapbox"],
+                ["GIS Engine", Globe, "Mapbox GL JS"],
                 ["IoT Broker", Radio, "Simulated · not connected"],
               ].map(([name, Icon, status], i) => {
                 const Component = Icon as typeof Globe;
