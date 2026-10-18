@@ -276,13 +276,26 @@ export const MapboxDigitalTwin = forwardRef<MapHandle, Props>(function MapboxDig
         map.setPaintProperty(ANOMALY, "circle-opacity", 0.35 + 0.45 * (0.5 + 0.5 * Math.sin(frame / 5)));
       }
     }, 65);
-    const resize = () => map.resize();
+    const resize = () => {
+      const container = map.getContainer();
+      const parent = container.parentElement;
+      if (parent) {
+        const { width, height } = parent.getBoundingClientRect();
+        if (width > 0 && height > 0) {
+          container.style.width = `${width}px`;
+          container.style.height = `${height}px`;
+        }
+      }
+      map.resize();
+    };
     const resizeFrame = window.requestAnimationFrame(resize);
     map.once("load", resize);
     window.addEventListener("resize", resize);
     const resizeObserver = new ResizeObserver(resize);
     if (hostRef.current) resizeObserver.observe(hostRef.current);
     if (hostRef.current?.parentElement) resizeObserver.observe(hostRef.current.parentElement);
+    const mapCard = hostRef.current?.closest(".op-map-card, .ad-embedded-map");
+    if (mapCard) resizeObserver.observe(mapCard);
     return () => { window.cancelAnimationFrame(resizeFrame); window.clearInterval(flowTimer); window.removeEventListener("resize", resize); resizeObserver.disconnect(); hoverPopup?.remove(); map.remove(); mapRef.current = null; infrastructureRef.current = null; };
   }, [token]);
 
